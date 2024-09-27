@@ -91,10 +91,7 @@ def get_user_logs(handle):
         'logs': logs
     })
 
-if __name__ == '__main__':
-    init_db()  # Initialize the database when the app starts
-    app.run(debug=True, host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
-
+# Route to get all logs and display them in a table format
 @app.route('/all-logs', methods=['GET'])
 def get_all_logs():
     conn = sqlite3.connect('logs.db')
@@ -103,9 +100,9 @@ def get_all_logs():
     logs = cursor.fetchall()
     conn.close()
 
-    logs_list = [{'handle': log[0], 'ip_address': log[1], 'timestamp': log[2]} for log in logs]
-    
-    return jsonify({
-        'status': 'success',
-        'logs': logs_list
-    })
+    # Render the logs into the 'all_logs.html' template
+    return render_template('all_logs.html', logs=logs)
+
+if __name__ == '__main__':
+    init_db()  # Initialize the database when the app starts
+    app.run(debug=True, host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
