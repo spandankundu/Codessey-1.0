@@ -4,22 +4,18 @@ import sqlite3
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_cors import CORS
-from redis import Redis  # Redis for storing rate limits
 import os
 
 app = Flask(__name__)
 CORS(app, resources={r"/log": {"origins": "*"}})  # Allow CORS only for the log route
 
-# Initialize Redis client
-redis_client = Redis(host='localhost', port=6379)
-
-# Initialize the Limiter with Redis as the storage backend
-limiter = Limiter(key_func=get_remote_address, storage_uri="redis://localhost:6379")
+# Initialize the Limiter (in-memory storage for rate limiting)
+limiter = Limiter(key_func=get_remote_address)
 
 # Initialize the app with the Limiter
 limiter.init_app(app)
 
-# Initialize the database
+# Initialize database
 def init_db():
     conn = sqlite3.connect('logs.db')
     cursor = conn.cursor()
