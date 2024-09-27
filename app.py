@@ -32,6 +32,8 @@ def init_db():
 
 # Function to get user's IP address
 def get_user_ip():
+    if request.headers.get('X-Forwarded-For'):
+        return request.headers.get('X-Forwarded-For').split(',')[0]  # Take the first IP address
     return request.remote_addr
 
 # Input validation for Codeforces handle
