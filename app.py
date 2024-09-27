@@ -18,6 +18,14 @@ limiter.init_app(app)
 def init_db():
     conn = sqlite3.connect('logs.db')
     cursor = conn.cursor()
+    
+    # Add the 'name' column if it doesn't exist
+    try:
+        cursor.execute('ALTER TABLE user_logs ADD COLUMN name TEXT')
+    except sqlite3.OperationalError:
+        pass  # This error occurs if the column already exists
+
+    # Ensure the rest of the table has all necessary columns
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS user_logs (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -29,6 +37,7 @@ def init_db():
             timestamp TEXT NOT NULL
         )
     ''')
+    
     conn.commit()
     conn.close()
 
@@ -100,7 +109,7 @@ def get_all_logs():
     logs = cursor.fetchall()
     conn.close()
 
-    return render_template('logs.html', logs=logs)
+    return render_template('all_logs.html', logs=logs)
 
 # Route to clear all logs
 @app.route('/clear-logs', methods=['POST'])
