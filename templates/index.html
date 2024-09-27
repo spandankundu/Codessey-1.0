@@ -18,8 +18,20 @@
         <div class="card p-4">
             <form id="verificationForm">
                 <div class="mb-3">
-                    <label for="handle" class="form-label">Enter your Codeforces Handle:</label>
-                    <input type="text" class="form-control" id="handle" name="handle" required pattern="[a-zA-Z0-9-_]+" title="Codeforces handle can only contain letters, numbers, underscores, and hyphens.">
+                    <label for="name" class="form-label">Enter your Name:</label>
+                    <input type="text" class="form-control" id="name" name="name" required>
+                </div>
+                <div class="mb-3">
+                    <label for="codeforces_id" class="form-label">Enter your Codeforces ID:</label>
+                    <input type="text" class="form-control" id="codeforces_id" name="codeforces_id" required pattern="[a-zA-Z0-9-_]+" title="Codeforces handle can only contain letters, numbers, underscores, and hyphens.">
+                </div>
+                <div class="mb-3">
+                    <label for="division" class="form-label">Select Division:</label>
+                    <select class="form-control" id="division" name="division" required>
+                        <option value="A">Division A</option>
+                        <option value="B">Division B</option>
+                        <option value="C">Division C</option>
+                    </select>
                 </div>
                 <button type="submit" class="btn btn-primary w-100">Verify</button>
             </form>
@@ -33,7 +45,9 @@
     <script>
         document.getElementById('verificationForm').addEventListener('submit', function (event) {
             event.preventDefault();
-            const handle = document.getElementById('handle').value;
+            const name = document.getElementById('name').value;
+            const codeforces_id = document.getElementById('codeforces_id').value;
+            const division = document.getElementById('division').value;
             const result = document.getElementById('result');
             const spinner = document.getElementById('loadingSpinner');
 
@@ -45,7 +59,7 @@
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ handle })
+                body: JSON.stringify({ name, codeforces_id, division })
             })
             .then(response => response.json())
             .then(data => {
