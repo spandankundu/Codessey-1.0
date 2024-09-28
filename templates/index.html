@@ -6,20 +6,57 @@
     <title>Contest Verification</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body { background-color: #f4f4f4; }
-        .container { margin-top: 50px; }
-        #result { margin-top: 20px; }
-        .spinner-border { display: none; }
+        body {
+            background-color: #f4f4f4;
+        }
+        .container {
+            margin-top: 50px;
+        }
+        #result {
+            margin-top: 20px;
+        }
+        #captureButton {
+            background-color: #007bff;
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 10px 0;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: background-color 0.3s ease;
+        }
+        #captureButton:hover {
+            background-color: #0056b3;
+        }
+        #camera {
+            display: block;
+            margin: 10px 0;
+        }
+        .spinner-border {
+            display: none;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1 class="text-center">Verify Your Presence</h1>
+        <h1 class="text-center">Contestant Verification Portal</h1>
         <div class="card p-4">
             <form id="verificationForm">
                 <div class="mb-3">
                     <label for="name" class="form-label">Enter your Name:</label>
                     <input type="text" class="form-control" id="name" name="name" required>
+                </div>
+                <div class="mb-3">
+                    <label for="participant_id" class="form-label">Enter your Participant ID:</label>
+                    <input type="text" class="form-control" id="participant_id" name="participant_id" required>
+                </div>
+                <div class="mb-3">
+                    <label for="seat_number" class="form-label">Enter your Seat Number:</label>
+                    <input type="text" class="form-control" id="seat_number" name="seat_number" required>
                 </div>
                 <div class="mb-3">
                     <label for="codeforces_id" class="form-label">Enter your Codeforces ID:</label>
@@ -33,50 +70,81 @@
                         <option value="C">Division C</option>
                     </select>
                 </div>
-                <button type="submit" class="btn btn-primary w-100">Verify</button>
+                <div class="mb-3">
+                    <label for="camera" class="form-label">Capture Your Photo:</label>
+                    <video id="camera" width="320" height="240" autoplay></video>
+                    <canvas id="canvas" width="320" height="240" style="display:none;"></canvas>
+                    <button id="captureButton" type="button">Click to Capture Photo</button>
+                </div>
+                <div class="mb-3">
+                    <div id="spinner" class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary">Submit</button>
             </form>
-            <div class="spinner-border text-primary" role="status" id="loadingSpinner">
-                <span class="visually-hidden">Loading...</span>
+
+            <div id="result" class="alert alert-info" role="alert" style="display: none;">
+                Redirecting you to Codeforces...
             </div>
-            <p id="result" class="text-center"></p>
         </div>
     </div>
 
     <script>
-        document.getElementById('verificationForm').addEventListener('submit', function (event) {
-            event.preventDefault();
-            const name = document.getElementById('name').value;
-            const codeforces_id = document.getElementById('codeforces_id').value;
-            const division = document.getElementById('division').value;
-            const result = document.getElementById('result');
-            const spinner = document.getElementById('loadingSpinner');
+        // Access the webcam and capture image
+        const video = document.getElementById('camera');
+        const canvas = document.getElementById('canvas');
+        const captureButton = document.getElementById('captureButton');
+        const ctx = canvas.getContext('2d');
+        let photoData = '';
 
-            result.textContent = '';
-            spinner.style.display = 'inline-block';
-
-            fetch('/log', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ name, codeforces_id, division })
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(stream => {
+                video.srcObject = stream;
             })
-            .then(response => response.json())
-            .then(data => {
-                spinner.style.display = 'none';
-                if (data.status === 'success') {
-                    result.textContent = `${data.message} IP: ${data.ip} Timestamp: ${data.timestamp}`;
-                    result.className = "text-success";
+            .catch(err => console.error('Error accessing camera:', err));
+
+        captureButton.addEventListener('click', () => {
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            photoData = canvas.toDataURL('image/png');
+            alert("Photo captured successfully!");
+        });
+
+        // Submit form
+        document.getElementById('verificationForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            document.getElementById('spinner').style.display = 'block';
+
+            const formData = {
+                name: document.getElementById('name').value,
+                participant_id: document.getElementById('participant_id').value,
+                seat_number: document.getElementById('seat_number').value,
+                codeforces_id: document.getElementById('codeforces_id').value,
+                division: document.getElementById('division').value,
+                photo: photoData
+            };
+
+            try {
+                const response = await fetch('/log', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const result = await response.json();
+                document.getElementById('spinner').style.display = 'none';
+                if (result.status === 'success') {
+                    document.getElementById('result').innerHTML = result.message;
+                    document.getElementById('result').style.display = 'block';
+                    window.location.href = result.redirect_url;
                 } else {
-                    result.textContent = 'Error: ' + data.message;
-                    result.className = "text-danger";
+                    document.getElementById('result').innerHTML = 'An error occurred!';
                 }
-            })
-            .catch(() => {
-                spinner.style.display = 'none';
-                result.textContent = 'An error occurred during verification.';
-                result.className = "text-danger";
-            });
+            } catch (error) {
+                console.error('Error submitting form:', error);
+            }
         });
     </script>
 </body>

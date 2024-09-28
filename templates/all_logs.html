@@ -7,21 +7,19 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body>
-    <div class="container mt-4">
-        <h2>User Logs</h2>
-
-        <form action="/clear-logs" method="POST" class="mb-3">
-            <button type="submit" class="btn btn-danger">Clear All Logs</button>
-        </form>
-
-        <table class="table table-striped">
+    <div class="container">
+        <h1 class="text-center">Contestant Logs</h1>
+        <table class="table table-bordered table-hover">
             <thead>
                 <tr>
                     <th>Name</th>
+                    <th>Participant ID</th>
+                    <th>Seat Number</th>
                     <th>Codeforces ID</th>
                     <th>Division</th>
                     <th>Rating</th>
                     <th>IP Address</th>
+                    <th>Photo</th>
                     <th>Timestamp</th>
                 </tr>
             </thead>
@@ -34,12 +32,22 @@
                     <td>{{ log[3] }}</td>
                     <td>{{ log[4] }}</td>
                     <td>{{ log[5] }}</td>
+                    <td>{{ log[6] }}</td>
+                    <td>
+                        {% if log[7] %}
+                        <img src="data:image/png;base64,{{ log[7] | b64encode }}" alt="User Photo" style="width: 100px; height: auto;">
+                        {% else %}
+                        No Photo
+                        {% endif %}
+                    </td>
+                    <td>{{ log[8] }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
+        <form method="POST" action="/clear-logs">
+            <button type="submit" class="btn btn-danger">Clear All Logs</button>
+        </form>
     </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
