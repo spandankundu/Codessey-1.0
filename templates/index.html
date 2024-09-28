@@ -7,43 +7,71 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body {
-            background-color: #f4f4f4;
+            background-color: #e9f0f7;
+            font-family: 'Arial', sans-serif;
         }
         .container {
             margin-top: 50px;
+            max-width: 600px;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
         }
-        #result {
-            margin-top: 20px;
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .form-label {
+            color: #555;
         }
         #captureButton {
             background-color: #007bff;
             border: none;
             color: white;
             padding: 10px 20px;
-            text-align: center;
-            text-decoration: none;
-            display: inline-block;
             font-size: 16px;
-            margin: 10px 0;
             cursor: pointer;
             border-radius: 4px;
             transition: background-color 0.3s ease;
+            width: 100%;
+            margin-top: 10px;
         }
         #captureButton:hover {
             background-color: #0056b3;
         }
+        #submitButton {
+            background-color: #28a745;
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: background-color 0.3s ease;
+            width: 100%;
+            margin-top: 20px;
+        }
+        #submitButton:hover {
+            background-color: #218838;
+        }
         #camera {
             display: block;
-            margin: 10px 0;
+            margin: 20px auto;
         }
-        .spinner-border {
-            display: none;
+        #result img {
+            margin-top: 15px;
+            max-width: 100px;
+        }
+        .form-group {
+            margin-bottom: 20px;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1 class="text-center">Contestant Verification Portal</h1>
+        <h1>Codessey 1.0</h1>
         <div class="card p-4">
             <form id="verificationForm">
                 <div class="mb-3">
@@ -63,88 +91,89 @@
                     <input type="text" class="form-control" id="codeforces_id" name="codeforces_id" required pattern="[a-zA-Z0-9-_]+" title="Codeforces handle can only contain letters, numbers, underscores, and hyphens.">
                 </div>
                 <div class="mb-3">
-                    <label for="division" class="form-label">Select Division:</label>
-                    <select class="form-control" id="division" name="division" required>
+                    <label for="division" class="form-label">Select your Division:</label>
+                    <select class="form-select" id="division" name="division" required>
+                        <option value="" disabled selected>Select your division</option>
                         <option value="A">Division A</option>
                         <option value="B">Division B</option>
                         <option value="C">Division C</option>
                     </select>
                 </div>
-                <div class="mb-3">
-                    <label for="camera" class="form-label">Capture Your Photo:</label>
+                <div class="mb-3 text-center">
+                    <label for="photo" class="form-label">Capture your photo:</label>
                     <video id="camera" width="320" height="240" autoplay></video>
-                    <canvas id="canvas" width="320" height="240" style="display:none;"></canvas>
-                    <button id="captureButton" type="button">Click to Capture Photo</button>
+                    <button type="button" id="captureButton">Capture Photo</button>
+                    <canvas id="canvas" style="display:none;"></canvas>
+                    <input type="hidden" id="photo" name="photo">
                 </div>
-                <div class="mb-3">
-                    <div id="spinner" class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">Loading...</span>
-                    </div>
-                </div>
-                <button type="submit" class="btn btn-primary">Submit</button>
+                <div id="result" class="text-center"></div>
+                <button type="submit" class="btn btn-primary" id="submitButton">Verify</button>
             </form>
-
-            <div id="result" class="alert alert-info" role="alert" style="display: none;">
-                Redirecting you to Codeforces...
-            </div>
         </div>
     </div>
 
     <script>
-        // Access the webcam and capture image
         const video = document.getElementById('camera');
         const canvas = document.getElementById('canvas');
         const captureButton = document.getElementById('captureButton');
-        const ctx = canvas.getContext('2d');
-        let photoData = '';
+        const photoInput = document.getElementById('photo');
+        const resultDiv = document.getElementById('result');
 
+        // Start camera
         navigator.mediaDevices.getUserMedia({ video: true })
             .then(stream => {
                 video.srcObject = stream;
+                video.play();
             })
-            .catch(err => console.error('Error accessing camera:', err));
+            .catch(error => {
+                console.error("Error accessing webcam: ", error);
+            });
 
+        // Capture photo
         captureButton.addEventListener('click', () => {
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            photoData = canvas.toDataURL('image/png');
-            alert("Photo captured successfully!");
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const context = canvas.getContext('2d');
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const dataURL = canvas.toDataURL('image/png');
+            photoInput.value = dataURL; // Store photo data in hidden input
+
+            // Display success message
+            resultDiv.innerHTML = "<p>Photo captured successfully! Proceed with verification.</p>";
+
+            // Display captured photo
+            const imgPreview = document.createElement('img');
+            imgPreview.src = dataURL;
+            imgPreview.style.marginTop = "10px";
+            resultDiv.appendChild(imgPreview);
         });
 
-        // Submit form
-        document.getElementById('verificationForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            document.getElementById('spinner').style.display = 'block';
+        // Handle form submission
+        const form = document.getElementById('verificationForm');
+        form.addEventListener('submit', (event) => {
+            event.preventDefault(); // Prevent the default form submission
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData.entries());
 
-            const formData = {
-                name: document.getElementById('name').value,
-                participant_id: document.getElementById('participant_id').value,
-                seat_number: document.getElementById('seat_number').value,
-                codeforces_id: document.getElementById('codeforces_id').value,
-                division: document.getElementById('division').value,
-                photo: photoData
-            };
-
-            try {
-                const response = await fetch('/log', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(formData)
-                });
-
-                const result = await response.json();
-                document.getElementById('spinner').style.display = 'none';
-                if (result.status === 'success') {
-                    document.getElementById('result').innerHTML = result.message;
-                    document.getElementById('result').style.display = 'block';
-                    window.location.href = result.redirect_url;
+            // Send data to server via fetch
+            fetch('/log', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Handle response from the server
+                if (data.status === 'success') {
+                    alert(data.message); // Show success message
+                    window.location.href = data.redirect_url; // Redirect to Codeforces
                 } else {
-                    document.getElementById('result').innerHTML = 'An error occurred!';
+                    alert(data.message); // Show error message
                 }
-            } catch (error) {
-                console.error('Error submitting form:', error);
-            }
+            })
+            .catch(error => console.error('Error:', error));
         });
     </script>
 </body>
